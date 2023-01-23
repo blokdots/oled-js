@@ -20,11 +20,11 @@ module.exports = (_a = (function () {
         function Oled(board, five, opts) {
             this.HEIGHT = opts.height || 32;
             this.WIDTH = opts.width || 128;
-            this.ADDRESS = opts.address || 0x3C;
-            this.PROTOCOL = (opts.address) ? Protocol.I2C : Protocol.SPI;
+            this.ADDRESS = opts.address || 0x3c;
+            this.PROTOCOL = opts.address ? Protocol.I2C : Protocol.SPI;
             this.MICROVIEW = opts.microview || false;
             this.SECONDARYPIN = opts.secondaryPin || 12;
-            this.RESETPIN = opts.resetPin || 4;
+            this.RESETPIN = opts.resetPin !== undefined ? null : 4;
             this.DATA = opts.data || 0x40;
             this.COMMAND = opts.command || 0x00;
             this.cursor_x = 0;
@@ -35,43 +35,43 @@ module.exports = (_a = (function () {
             this.board = board;
             this.five = five;
             var config = {
-                '128x32': {
-                    'multiplex': 0x1F,
-                    'compins': 0x02,
-                    'coloffset': 0
+                "128x32": {
+                    multiplex: 0x1f,
+                    compins: 0x02,
+                    coloffset: 0,
                 },
-                '128x64': {
-                    'multiplex': 0x3F,
-                    'compins': 0x12,
-                    'coloffset': 0
+                "128x64": {
+                    multiplex: 0x3f,
+                    compins: 0x12,
+                    coloffset: 0,
                 },
-                '96x16': {
-                    'multiplex': 0x0F,
-                    'compins': 0x2,
-                    'coloffset': 0
+                "96x16": {
+                    multiplex: 0x0f,
+                    compins: 0x2,
+                    coloffset: 0,
                 },
-                '64x48': {
-                    'multiplex': 0x2F,
-                    'compins': 0x12,
-                    'coloffset': (this.MICROVIEW) ? 32 : 0
-                }
+                "64x48": {
+                    multiplex: 0x2f,
+                    compins: 0x12,
+                    coloffset: this.MICROVIEW ? 32 : 0,
+                },
             };
             if (this.MICROVIEW) {
                 this.SPIconfig = {
-                    'dcPin': 8,
-                    'ssPin': 10,
-                    'rstPin': 7,
-                    'clkPin': 13,
-                    'mosiPin': 11
+                    dcPin: 8,
+                    ssPin: 10,
+                    rstPin: 7,
+                    clkPin: 13,
+                    mosiPin: 11,
                 };
             }
             else if (this.PROTOCOL === Protocol.SPI) {
                 this.SPIconfig = {
-                    'dcPin': 11,
-                    'ssPin': this.SECONDARYPIN,
-                    'rstPin': 13,
-                    'clkPin': 10,
-                    'mosiPin': 9
+                    dcPin: 11,
+                    ssPin: this.SECONDARYPIN,
+                    rstPin: 13,
+                    clkPin: 10,
+                    mosiPin: 9,
                 };
             }
             var screenSize = "".concat(this.WIDTH, "x").concat(this.HEIGHT);
@@ -87,21 +87,30 @@ module.exports = (_a = (function () {
         Oled.prototype._initialise = function () {
             var initSeq = [
                 Oled.DISPLAY_OFF,
-                Oled.SET_DISPLAY_CLOCK_DIV, 0x80,
-                Oled.SET_MULTIPLEX, this.screenConfig.multiplex,
-                Oled.SET_DISPLAY_OFFSET, 0x00,
+                Oled.SET_DISPLAY_CLOCK_DIV,
+                0x80,
+                Oled.SET_MULTIPLEX,
+                this.screenConfig.multiplex,
+                Oled.SET_DISPLAY_OFFSET,
+                0x00,
                 Oled.SET_START_LINE,
-                Oled.CHARGE_PUMP, 0x14,
-                Oled.MEMORY_MODE, 0x00,
+                Oled.CHARGE_PUMP,
+                0x14,
+                Oled.MEMORY_MODE,
+                0x00,
                 Oled.SEG_REMAP,
                 Oled.COM_SCAN_DEC,
-                Oled.SET_COM_PINS, this.screenConfig.compins,
-                Oled.SET_CONTRAST, 0x8F,
-                Oled.SET_PRECHARGE, 0xF1,
-                Oled.SET_VCOM_DETECT, 0x40,
+                Oled.SET_COM_PINS,
+                this.screenConfig.compins,
+                Oled.SET_CONTRAST,
+                0x8f,
+                Oled.SET_PRECHARGE,
+                0xf1,
+                Oled.SET_VCOM_DETECT,
+                0x40,
                 Oled.DISPLAY_ALL_ON_RESUME,
                 Oled.NORMAL_DISPLAY,
-                Oled.DISPLAY_ON
+                Oled.DISPLAY_ON,
             ];
             for (var i = 0; i < initSeq.length; i++) {
                 this._transfer(TransferType.Command, initSeq[i]);
@@ -119,9 +128,14 @@ module.exports = (_a = (function () {
         };
         Oled.prototype._setUpI2C = function (opts) {
             this.board.io.i2cConfig(opts);
-            this.rstPin = new this.five.Pin({ pin: this.RESETPIN, board: this.board });
-            this.rstPin.low();
-            this.rstPin.high();
+            if (this.rstPin) {
+                this.rstPin = new this.five.Pin({
+                    pin: this.RESETPIN,
+                    board: this.board,
+                });
+                this.rstPin.low();
+                this.rstPin.high();
+            }
         };
         Oled.prototype._transfer = function (type, val) {
             var control;
@@ -170,18 +184,20 @@ module.exports = (_a = (function () {
             var oled = this;
             var tick = function (callback) {
                 oled._readI2C(function (byte) {
-                    var busy = byte >> 7 & 1;
+                    var busy = (byte >> 7) & 1;
                     if (!busy) {
                         callback();
                     }
                     else {
-                        console.log('I\'m busy!');
+                        console.log("I'm busy!");
                         setTimeout(tick, 0);
                     }
                 });
             };
             if (this.PROTOCOL === Protocol.I2C) {
-                setTimeout(function () { tick(callback); }, 0);
+                setTimeout(function () {
+                    tick(callback);
+                }, 0);
             }
             else {
                 callback();
@@ -192,11 +208,11 @@ module.exports = (_a = (function () {
             this.cursor_y = y;
         };
         Oled.prototype._invertColor = function (color) {
-            return (color === 0) ? 1 : 0;
+            return color === 0 ? 1 : 0;
         };
         Oled.prototype.writeString = function (font, size, string, color, wrap, linespacing, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
-            var wordArr = string.split(' ');
+            var immed = typeof sync === "undefined" ? true : sync;
+            var wordArr = string.split(" ");
             var len = wordArr.length;
             var offset = this.cursor_x;
             var padding = 0;
@@ -204,25 +220,25 @@ module.exports = (_a = (function () {
             var leading = linespacing || 2;
             for (var i = 0; i < len; i += 1) {
                 if (i < len - 1)
-                    wordArr[i] += ' ';
-                var stringArr = wordArr[i].split('');
+                    wordArr[i] += " ";
+                var stringArr = wordArr[i].split("");
                 var slen = stringArr.length;
-                var compare = (font.width * size * slen) + (size * (len - 1));
-                if (wrap && len > 1 && (offset >= (this.WIDTH - compare))) {
+                var compare = font.width * size * slen + size * (len - 1);
+                if (wrap && len > 1 && offset >= this.WIDTH - compare) {
                     offset = 1;
-                    this.cursor_y += (font.height * size) + size + leading;
+                    this.cursor_y += font.height * size + size + leading;
                     this.setCursor(offset, this.cursor_y);
                 }
                 for (var i_1 = 0; i_1 < slen; i_1 += 1) {
                     var charBuf = this._findCharBuf(font, stringArr[i_1]);
                     var charBytes = this._readCharBytes(charBuf);
                     this._drawChar(font, charBytes, size, color, false);
-                    this.fillRect(offset - padding, this.cursor_y, padding, (font.height * size), this._invertColor(color), false);
-                    padding = (stringArr[i_1] === ' ') ? 0 : size + letspace;
-                    offset += (font.width * size) + padding;
-                    if (wrap && (offset >= (this.WIDTH - font.width - letspace))) {
+                    this.fillRect(offset - padding, this.cursor_y, padding, font.height * size, this._invertColor(color), false);
+                    padding = stringArr[i_1] === " " ? 0 : size + letspace;
+                    offset += font.width * size + padding;
+                    if (wrap && offset >= this.WIDTH - font.width - letspace) {
                         offset = 1;
-                        this.cursor_y += (font.height * size) + size + leading;
+                        this.cursor_y += font.height * size + size + leading;
                     }
                     this.setCursor(offset, this.cursor_y);
                 }
@@ -239,7 +255,7 @@ module.exports = (_a = (function () {
             for (var i = 0; i < byteArray.length; i += 1) {
                 pagePos = Math.floor(i / font.width) * 8;
                 for (var j = 0; j < 8; j += 1) {
-                    var pixelState = (byteArray[i][j] === 1) ? color : this._invertColor(color);
+                    var pixelState = byteArray[i][j] === 1 ? color : this._invertColor(color);
                     var xpos = void 0;
                     var ypos = void 0;
                     if (size === 1) {
@@ -248,12 +264,12 @@ module.exports = (_a = (function () {
                         this.drawPixel([xpos, ypos, pixelState], false);
                     }
                     else {
-                        xpos = x + (i * size);
-                        ypos = y + (j * size);
+                        xpos = x + i * size;
+                        ypos = y + j * size;
                         this.fillRect(xpos, ypos, size, size, pixelState, false);
                     }
                 }
-                c = (c < font.width - 1) ? c += 1 : 0;
+                c = c < font.width - 1 ? (c += 1) : 0;
             }
         };
         Oled.prototype._readCharBytes = function (byteArray) {
@@ -262,7 +278,7 @@ module.exports = (_a = (function () {
             for (var i = 0; i < byteArray.length; i += 1) {
                 var byte = byteArray[i];
                 for (var j = 0; j < 8; j += 1) {
-                    var bit = byte >> j & 1;
+                    var bit = (byte >> j) & 1;
                     bitArr.push(bit);
                 }
                 bitCharArr.push(bitArr);
@@ -282,7 +298,9 @@ module.exports = (_a = (function () {
                     Oled.COLUMN_ADDR,
                     _this.screenConfig.coloffset,
                     _this.screenConfig.coloffset + _this.WIDTH - 1,
-                    Oled.PAGE_ADDR, 0, (_this.HEIGHT / 8) - 1
+                    Oled.PAGE_ADDR,
+                    0,
+                    _this.HEIGHT / 8 - 1,
                 ];
                 var displaySeqLen = displaySeq.length;
                 var bufferLen = _this.buffer.length;
@@ -304,7 +322,7 @@ module.exports = (_a = (function () {
                 contrast = 0;
             }
             else {
-                contrast = 0xCF;
+                contrast = 0xcf;
             }
             this._transfer(TransferType.Command, Oled.SET_CONTRAST);
             this._transfer(TransferType.Command, contrast);
@@ -316,7 +334,7 @@ module.exports = (_a = (function () {
             this._transfer(TransferType.Command, Oled.DISPLAY_ON);
         };
         Oled.prototype.clearDisplay = function (sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             for (var i = 0; i < this.buffer.length; i += 1) {
                 if (this.buffer[i] !== 0x00) {
                     this.buffer[i] = 0x00;
@@ -338,7 +356,7 @@ module.exports = (_a = (function () {
             }
         };
         Oled.prototype.drawBitmap = function (pixels, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             for (var i = 0; i < pixels.length; i++) {
                 var x = Math.floor(i % this.WIDTH);
                 var y = Math.floor(i / this.WIDTH);
@@ -349,11 +367,11 @@ module.exports = (_a = (function () {
             }
         };
         Oled.prototype._isSinglePixel = function (pixels) {
-            return typeof pixels[0] !== 'object';
+            return typeof pixels[0] !== "object";
         };
         Oled.prototype.drawPixel = function (pixels, sync) {
             var _this = this;
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             if (this._isSinglePixel(pixels))
                 pixels = [pixels];
             pixels.forEach(function (el) {
@@ -363,7 +381,7 @@ module.exports = (_a = (function () {
                 var byte = 0;
                 var page = Math.floor(y / 8);
                 var pageShift = 0x01 << (y - 8 * page);
-                (page === 0) ? byte = x : byte = x + (_this.WIDTH * page);
+                page === 0 ? (byte = x) : (byte = x + _this.WIDTH * page);
                 if (color === 0) {
                     _this.buffer[byte] &= ~pageShift;
                 }
@@ -389,8 +407,8 @@ module.exports = (_a = (function () {
                 var any = false;
                 for (var i = 0; i < blen; i += 1) {
                     var b = byteArray[i];
-                    if ((b >= 0) && (b < _this.buffer.length)) {
-                        var page = b / _this.WIDTH | 0;
+                    if (b >= 0 && b < _this.buffer.length) {
+                        var page = (b / _this.WIDTH) | 0;
                         if (page < pageStart)
                             pageStart = page;
                         if (page > pageEnd)
@@ -406,8 +424,12 @@ module.exports = (_a = (function () {
                 if (!any)
                     return;
                 var displaySeq = [
-                    Oled.COLUMN_ADDR, colStart, colEnd,
-                    Oled.PAGE_ADDR, pageStart, pageEnd
+                    Oled.COLUMN_ADDR,
+                    colStart,
+                    colEnd,
+                    Oled.PAGE_ADDR,
+                    pageStart,
+                    pageEnd,
                 ];
                 var displaySeqLen = displaySeq.length;
                 for (var i = 0; i < displaySeqLen; i += 1) {
@@ -422,7 +444,7 @@ module.exports = (_a = (function () {
             this.dirtyBytes = [];
         };
         Oled.prototype.drawLine = function (x0, y0, x1, y1, color, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             var dx = Math.abs(x1 - x0);
             var sx = x0 < x1 ? 1 : -1;
             var dy = Math.abs(y1 - y0);
@@ -447,7 +469,7 @@ module.exports = (_a = (function () {
             }
         };
         Oled.prototype.drawRect = function (x, y, w, h, color, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             this.drawLine(x, y, x + w, y, color, false);
             this.drawLine(x, y + 1, x, y + h - 1, color, false);
             this.drawLine(x + w, y + 1, x + w, y + h - 1, color, false);
@@ -456,11 +478,10 @@ module.exports = (_a = (function () {
                 this._updateDirtyBytes(this.dirtyBytes);
             }
         };
-        ;
         Oled.prototype.drawQRCode = function (x, y, data, margin, sync) {
             if (margin === void 0) { margin = 4; }
             if (qr) {
-                var immed = (typeof sync === 'undefined') ? true : sync;
+                var immed = typeof sync === "undefined" ? true : sync;
                 var matrix = qr.matrix(data);
                 var pixels = matrix.flat();
                 var bitmap = pixels.map(function (pixel) { return (pixel ? 0 : 1); });
@@ -482,7 +503,7 @@ module.exports = (_a = (function () {
             }
         };
         Oled.prototype.fillRect = function (x, y, w, h, color, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             for (var i = x; i < x + w; i += 1) {
                 this.drawLine(i, y, i, y + h - 1, color, false);
             }
@@ -491,16 +512,18 @@ module.exports = (_a = (function () {
             }
         };
         Oled.prototype.drawCircle = function (x0, y0, r, color, sync) {
-            var immed = (typeof sync === 'undefined') ? true : sync;
+            var immed = typeof sync === "undefined" ? true : sync;
             var f = 1 - r;
             var ddF_x = 1;
             var ddF_y = -2 * r;
             var x = 0;
             var y = r;
-            this.drawPixel([[x0, y0 + r, color],
+            this.drawPixel([
+                [x0, y0 + r, color],
                 [x0, y0 - r, color],
                 [x0 + r, y0, color],
-                [x0 - r, y0, color]], false);
+                [x0 - r, y0, color],
+            ], false);
             while (x < y) {
                 if (f >= 0) {
                     y--;
@@ -510,40 +533,41 @@ module.exports = (_a = (function () {
                 x++;
                 ddF_x += 2;
                 f += ddF_x;
-                this.drawPixel([[x0 + x, y0 + y, color],
+                this.drawPixel([
+                    [x0 + x, y0 + y, color],
                     [x0 - x, y0 + y, color],
                     [x0 + x, y0 - y, color],
                     [x0 - x, y0 - y, color],
                     [x0 + y, y0 + x, color],
                     [x0 - y, y0 + x, color],
                     [x0 + y, y0 - x, color],
-                    [x0 - y, y0 - x, color]], false);
+                    [x0 - y, y0 - x, color],
+                ], false);
             }
             if (immed) {
                 this._updateDirtyBytes(this.dirtyBytes);
             }
         };
-        ;
         Oled.prototype.startScroll = function (dir, start, stop) {
             var _this = this;
             var cmdSeq = [];
             switch (dir) {
-                case 'right':
+                case "right":
                     cmdSeq.push(Oled.RIGHT_HORIZONTAL_SCROLL);
                     break;
-                case 'left':
+                case "left":
                     cmdSeq.push(Oled.LEFT_HORIZONTAL_SCROLL);
                     break;
-                case 'left diagonal':
+                case "left diagonal":
                     cmdSeq.push(Oled.SET_VERTICAL_SCROLL_AREA, 0x00, this.HEIGHT, Oled.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL, 0x00, start, 0x00, stop, 0x01, Oled.ACTIVATE_SCROLL);
                     break;
-                case 'right diagonal':
+                case "right diagonal":
                     cmdSeq.push(Oled.SET_VERTICAL_SCROLL_AREA, 0x00, this.HEIGHT, Oled.VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL, 0x00, start, 0x00, stop, 0x01, Oled.ACTIVATE_SCROLL);
                     break;
             }
             this._waitUntilReady(function () {
-                if (dir === 'right' || dir === 'left') {
-                    cmdSeq.push(0x00, start, 0x00, stop, 0x00, 0xFF, Oled.ACTIVATE_SCROLL);
+                if (dir === "right" || dir === "left") {
+                    cmdSeq.push(0x00, start, 0x00, stop, 0x00, 0xff, Oled.ACTIVATE_SCROLL);
                 }
                 for (var i = 0; i < cmdSeq.length; i += 1) {
                     _this._transfer(TransferType.Command, cmdSeq[i]);
@@ -555,32 +579,32 @@ module.exports = (_a = (function () {
         };
         return Oled;
     }()),
-    _a.DISPLAY_OFF = 0xAE,
-    _a.DISPLAY_ON = 0xAF,
-    _a.SET_DISPLAY_CLOCK_DIV = 0xD5,
-    _a.SET_MULTIPLEX = 0xA8,
-    _a.SET_DISPLAY_OFFSET = 0xD3,
+    _a.DISPLAY_OFF = 0xae,
+    _a.DISPLAY_ON = 0xaf,
+    _a.SET_DISPLAY_CLOCK_DIV = 0xd5,
+    _a.SET_MULTIPLEX = 0xa8,
+    _a.SET_DISPLAY_OFFSET = 0xd3,
     _a.SET_START_LINE = 0x00,
-    _a.CHARGE_PUMP = 0x8D,
+    _a.CHARGE_PUMP = 0x8d,
     _a.EXTERNAL_VCC = false,
     _a.MEMORY_MODE = 0x20,
-    _a.SEG_REMAP = 0xA1,
-    _a.COM_SCAN_DEC = 0xC8,
-    _a.COM_SCAN_INC = 0xC0,
-    _a.SET_COM_PINS = 0xDA,
+    _a.SEG_REMAP = 0xa1,
+    _a.COM_SCAN_DEC = 0xc8,
+    _a.COM_SCAN_INC = 0xc0,
+    _a.SET_COM_PINS = 0xda,
     _a.SET_CONTRAST = 0x81,
     _a.SET_PRECHARGE = 0xd9,
-    _a.SET_VCOM_DETECT = 0xDB,
-    _a.DISPLAY_ALL_ON_RESUME = 0xA4,
-    _a.NORMAL_DISPLAY = 0xA6,
+    _a.SET_VCOM_DETECT = 0xdb,
+    _a.DISPLAY_ALL_ON_RESUME = 0xa4,
+    _a.NORMAL_DISPLAY = 0xa6,
     _a.COLUMN_ADDR = 0x21,
     _a.PAGE_ADDR = 0x22,
-    _a.INVERT_DISPLAY = 0xA7,
-    _a.ACTIVATE_SCROLL = 0x2F,
-    _a.DEACTIVATE_SCROLL = 0x2E,
-    _a.SET_VERTICAL_SCROLL_AREA = 0xA3,
+    _a.INVERT_DISPLAY = 0xa7,
+    _a.ACTIVATE_SCROLL = 0x2f,
+    _a.DEACTIVATE_SCROLL = 0x2e,
+    _a.SET_VERTICAL_SCROLL_AREA = 0xa3,
     _a.RIGHT_HORIZONTAL_SCROLL = 0x26,
     _a.LEFT_HORIZONTAL_SCROLL = 0x27,
     _a.VERTICAL_AND_RIGHT_HORIZONTAL_SCROLL = 0x29,
-    _a.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL = 0x2A,
+    _a.VERTICAL_AND_LEFT_HORIZONTAL_SCROLL = 0x2a,
     _a);

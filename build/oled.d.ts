@@ -1,5 +1,4 @@
 /// <reference types="node" />
-/// <reference types="node" />
 import { Board, Pin } from "johnny-five";
 declare enum Protocol {
     I2C = 0,
@@ -9,7 +8,7 @@ declare enum TransferType {
     Command = 0,
     Data = 1
 }
-type Direction = 'left' | 'left diagonal' | 'right' | 'right diagonal';
+type Direction = "left" | "left diagonal" | "right" | "right diagonal";
 type Black = 0x00;
 type White = 0x01 | 0xff;
 type Color = Black | White;

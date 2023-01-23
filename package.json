@@ -29,6 +29,7 @@
   },
   "scripts": {
     "build": "tsc -b",
+    "demo": "node tests/demoTime.js",
     "test": "node tests/unit/oledjs.spec.js | tap-spec"
   },
   "repository": {
