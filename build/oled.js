@@ -24,7 +24,7 @@ module.exports = (_a = (function () {
             this.PROTOCOL = opts.address ? Protocol.I2C : Protocol.SPI;
             this.MICROVIEW = opts.microview || false;
             this.SECONDARYPIN = opts.secondaryPin || 12;
-            this.RESETPIN = opts.resetPin !== undefined ? null : 4;
+            this.RESETPIN = opts.resetPin === undefined ? 4 : opts.resetPin;
             this.DATA = opts.data || 0x40;
             this.COMMAND = opts.command || 0x00;
             this.cursor_x = 0;

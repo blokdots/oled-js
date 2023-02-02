@@ -28,7 +28,7 @@ interface OledOptions {
   address?: number;
   microview?: boolean;
   secondaryPin?: number;
-  resetPin?: number;
+  resetPin?: number | null;
   data?: number;
   command?: number;
 }
@@ -122,7 +122,7 @@ export = class Oled {
     this.PROTOCOL = opts.address ? Protocol.I2C : Protocol.SPI;
     this.MICROVIEW = opts.microview || false;
     this.SECONDARYPIN = opts.secondaryPin || 12;
-    this.RESETPIN = opts.resetPin !== undefined ? null : 4;
+    this.RESETPIN = opts.resetPin === undefined ? 4 : opts.resetPin;
     this.DATA = opts.data || 0x40;
     this.COMMAND = opts.command || 0x00;
 

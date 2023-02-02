@@ -19,7 +19,7 @@ interface OledOptions {
     address?: number;
     microview?: boolean;
     secondaryPin?: number;
-    resetPin?: number;
+    resetPin?: number | null;
     data?: number;
     command?: number;
 }
