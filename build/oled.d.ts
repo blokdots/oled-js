@@ -11,8 +11,8 @@ declare enum TransferType {
 type Direction = "left" | "left diagonal" | "right" | "right diagonal";
 type Black = 0x00;
 type White = 0x01 | 0xff;
-type Color = Black | White;
-type Pixel = [number, number, Color];
+export type Color = Black | White;
+export type Pixel = [number, number, Color];
 interface OledOptions {
     height?: number;
     width?: number;
