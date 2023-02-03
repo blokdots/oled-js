@@ -1,9 +1,9 @@
-import { Board, Pin } from "johnny-five";
+import { Board, Pin } from 'johnny-five';
 
 let qr: any = null;
 try {
   // import optional dependency for drawing QR codes
-  qr = require("qr-image");
+  qr = require('qr-image');
 } catch (err) {
   // Do nothing
 }
@@ -16,7 +16,7 @@ enum TransferType {
   Command,
   Data,
 }
-type Direction = "left" | "left diagonal" | "right" | "right diagonal";
+type Direction = 'left' | 'left diagonal' | 'right' | 'right diagonal';
 type Black = 0x00;
 type White = 0x01 | 0xff;
 export type Color = Black | White;
@@ -55,7 +55,7 @@ interface SPIConfig {
   mosiPin: number;
 }
 
-export = class Oled {
+class Oled {
   // Configuration
   /* private */ readonly HEIGHT: number;
   /* private */ readonly WIDTH: number;
@@ -140,23 +140,23 @@ export = class Oled {
     this.five = five;
 
     const config: { [screenSize: string]: ScreenConfig } = {
-      "128x32": {
+      '128x32': {
         multiplex: 0x1f,
         compins: 0x02,
         coloffset: 0,
       },
-      "128x64": {
+      '128x64': {
         multiplex: 0x3f,
         compins: 0x12,
         coloffset: 0,
       },
-      "96x16": {
+      '96x16': {
         multiplex: 0x0f,
         compins: 0x2,
         coloffset: 0,
       },
       // this is blended microview / normal 64 x 48, currently wip
-      "64x48": {
+      '64x48': {
         multiplex: 0x2f,
         compins: 0x12,
         coloffset: this.MICROVIEW ? 32 : 0,
@@ -371,8 +371,8 @@ export = class Oled {
     linespacing: number | null,
     sync?: boolean
   ): void {
-    const immed = typeof sync === "undefined" ? true : sync;
-    const wordArr = string.split(" ");
+    const immed = typeof sync === 'undefined' ? true : sync;
+    const wordArr = string.split(' ');
 
     const len = wordArr.length;
 
@@ -386,9 +386,9 @@ export = class Oled {
     // loop through words
     for (let i = 0; i < len; i += 1) {
       // put the word space back in
-      if (i < len - 1) wordArr[i] += " ";
+      if (i < len - 1) wordArr[i] += ' ';
 
-      const stringArr = wordArr[i].split("");
+      const stringArr = wordArr[i].split('');
       const slen = stringArr.length;
       const compare = font.width * size * slen + size * (len - 1);
 
@@ -409,17 +409,10 @@ export = class Oled {
         this._drawChar(font, charBytes, size, color, false);
 
         // fills in background behind the text pixels so that it's easier to read the text
-        this.fillRect(
-          offset - padding,
-          this.cursor_y,
-          padding,
-          font.height * size,
-          this._invertColor(color),
-          false
-        );
+        this.fillRect(offset - padding, this.cursor_y, padding, font.height * size, this._invertColor(color), false);
 
         // calc new x position for the next char, add a touch of padding too if it's a non space char
-        padding = stringArr[i] === " " ? 0 : size + letspace;
+        padding = stringArr[i] === ' ' ? 0 : size + letspace;
         offset += font.width * size + padding;
 
         // wrap letters if necessary
@@ -437,13 +430,7 @@ export = class Oled {
   }
 
   // draw an individual character to the screen
-  /* private */ _drawChar(
-    font: Font,
-    byteArray: number[][],
-    size: number,
-    color: Color,
-    sync?: boolean
-  ): void {
+  /* private */ _drawChar(font: Font, byteArray: number[][], size: number, color: Color, sync?: boolean): void {
     // take your positions...
     const x = this.cursor_x;
     const y = this.cursor_y;
@@ -455,8 +442,7 @@ export = class Oled {
       pagePos = Math.floor(i / font.width) * 8;
       for (let j = 0; j < 8; j += 1) {
         // pull color out (invert the color if user chose black)
-        const pixelState =
-          byteArray[i][j] === 1 ? color : this._invertColor(color);
+        const pixelState = byteArray[i][j] === 1 ? color : this._invertColor(color);
         let xpos;
         let ypos;
         // standard font size
@@ -570,7 +556,7 @@ export = class Oled {
 
   // clear all pixels currently on the display
   public clearDisplay(sync?: boolean): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+    const immed = typeof sync === 'undefined' ? true : sync;
     // write off pixels
     for (let i = 0; i < this.buffer.length; i += 1) {
       if (this.buffer[i] !== 0x00) {
@@ -597,7 +583,7 @@ export = class Oled {
 
   // draw an image pixel array on the screen
   public drawBitmap(pixels: Color[], sync?: boolean): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+    const immed = typeof sync === 'undefined' ? true : sync;
 
     for (let i = 0; i < pixels.length; i++) {
       const x = Math.floor(i % this.WIDTH);
@@ -612,12 +598,12 @@ export = class Oled {
   }
 
   /* private */ _isSinglePixel(pixels: Pixel | Pixel[]): pixels is Pixel {
-    return typeof pixels[0] !== "object";
+    return typeof pixels[0] !== 'object';
   }
 
   // draw one or many pixels on oled
   public drawPixel(pixels: Pixel | Pixel[], sync?: boolean): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+    const immed = typeof sync === 'undefined' ? true : sync;
 
     // handle lazy single pixel case
     if (this._isSinglePixel(pixels)) pixels = [pixels];
@@ -715,15 +701,8 @@ export = class Oled {
   }
 
   // using Bresenham's line algorithm
-  public drawLine(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    color: Color,
-    sync?: boolean
-  ): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+  public drawLine(x0: number, y0: number, x1: number, y1: number, color: Color, sync?: boolean): void {
+    const immed = typeof sync === 'undefined' ? true : sync;
 
     const dx = Math.abs(x1 - x0);
     const sx = x0 < x1 ? 1 : -1;
@@ -755,15 +734,8 @@ export = class Oled {
   }
 
   // Draw an outlined rectangle
-  public drawRect(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    color: Color,
-    sync?: boolean
-  ): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+  public drawRect(x: number, y: number, w: number, h: number, color: Color, sync?: boolean): void {
+    const immed = typeof sync === 'undefined' ? true : sync;
     // top
     this.drawLine(x, y, x + w, y, color, false);
 
@@ -782,15 +754,9 @@ export = class Oled {
   }
 
   // Draw a QR code
-  public drawQRCode(
-    x: number,
-    y: number,
-    data: string,
-    margin = 4,
-    sync?: boolean
-  ): void {
+  public drawQRCode(x: number, y: number, data: string, margin = 4, sync?: boolean): void {
     if (qr) {
-      const immed = typeof sync === "undefined" ? true : sync;
+      const immed = typeof sync === 'undefined' ? true : sync;
       const matrix = qr.matrix(data);
       const pixels = matrix.flat();
       const bitmap = pixels.map((pixel: boolean) => (pixel ? 0 : 1)); // black and white or white and black?
@@ -815,20 +781,13 @@ export = class Oled {
         this._updateDirtyBytes(this.dirtyBytes);
       }
     } else {
-      console.log("Missing optional dependency: qr-image");
+      console.log('Missing optional dependency: qr-image');
     }
   }
 
   // draw a filled rectangle on the oled
-  public fillRect(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-    color: Color,
-    sync?: boolean
-  ): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+  public fillRect(x: number, y: number, w: number, h: number, color: Color, sync?: boolean): void {
+    const immed = typeof sync === 'undefined' ? true : sync;
     // one iteration for each column of the rectangle
     for (let i = x; i < x + w; i += 1) {
       // draws a vert line
@@ -846,14 +805,8 @@ export = class Oled {
    * method on the Adafruit GFX library
    * https://github.com/adafruit/Adafruit-GFX-Library
    */
-  public drawCircle(
-    x0: number,
-    y0: number,
-    r: number,
-    color: Color,
-    sync?: boolean
-  ): void {
-    const immed = typeof sync === "undefined" ? true : sync;
+  public drawCircle(x0: number, y0: number, r: number, color: Color, sync?: boolean): void {
+    const immed = typeof sync === 'undefined' ? true : sync;
 
     let f = 1 - r;
     let ddF_x = 1;
@@ -906,13 +859,13 @@ export = class Oled {
     const cmdSeq: number[] = [];
 
     switch (dir) {
-      case "right":
+      case 'right':
         cmdSeq.push(Oled.RIGHT_HORIZONTAL_SCROLL);
         break;
-      case "left":
+      case 'left':
         cmdSeq.push(Oled.LEFT_HORIZONTAL_SCROLL);
         break;
-      case "left diagonal":
+      case 'left diagonal':
         cmdSeq.push(
           Oled.SET_VERTICAL_SCROLL_AREA,
           0x00,
@@ -926,7 +879,7 @@ export = class Oled {
           Oled.ACTIVATE_SCROLL
         );
         break;
-      case "right diagonal":
+      case 'right diagonal':
         cmdSeq.push(
           Oled.SET_VERTICAL_SCROLL_AREA,
           0x00,
@@ -943,7 +896,7 @@ export = class Oled {
     }
 
     this._waitUntilReady(() => {
-      if (dir === "right" || dir === "left") {
+      if (dir === 'right' || dir === 'left') {
         cmdSeq.push(0x00, start, 0x00, stop, 0x00, 0xff, Oled.ACTIVATE_SCROLL);
       }
 
@@ -957,4 +910,6 @@ export = class Oled {
   public stopScroll() {
     this._transfer(TransferType.Command, Oled.DEACTIVATE_SCROLL); // stahp
   }
-};
+}
+
+export default Oled;
